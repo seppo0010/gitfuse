@@ -124,6 +124,14 @@ class GitFuse(fuse.Fuse):
 		for e in os.listdir(self.basePath + path):
 			yield fuse.Direntry(e);
 
+	def chmod(self, path, mode):
+		self.debug(str(['chmod', path, mode]))
+		realpath = self.getpath(path)
+		ret = os.chmod(realpath, mode)
+		self.git('add', realpath)
+		self.git('commit -m "Changed file permissions"', realpath)
+		return ret
+
 	def getpath(self, path):
 		return self.basePath + path;
 

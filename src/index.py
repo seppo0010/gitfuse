@@ -96,7 +96,7 @@ class GitFuse(fuse.Fuse):
 
 	def mkdir(self, path, mode):
 		self.debug(str(['mkdir', path, mode]))
-		return os.mkdir(self.getpath(path, mode))
+		return os.mkdir(self.getpath(path), mode)
 
 	def rmdir(self, path):
 		self.debug(str(['rmdir', path]))
@@ -136,7 +136,7 @@ class GitFuse(fuse.Fuse):
 		return self.basePath + path;
 
 	def debug(self, text):
-		return
+		#return
 		f = open('/tmp/workfile', 'a+')
 		f.write(text)
 		f.write("\n")

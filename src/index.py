@@ -27,12 +27,16 @@ class GitFuse(fuse.Fuse):
 			self.basePath = config.get('gitfusetest', 'path'); #TODO: Remove hardcoded repository name
 			if self.basePath.count('~',0,1) == 1:
 				self.basePath = self.basePath.replace('~',home,1)
+			self.basePath = self.basePath.rstrip('/') + '/'
 		except ConfigParser.Error:
 			sys.exit('Unable to find repository path');
 
 	def getattr(self, path):
 		self.debug(str(['getattr', path]))
-		return os.stat(self.getpath(path))
+		realpath = self.getpath(path)
+		ret = os.lstat(realpath)
+		self.debug(str(ret))
+		return ret
 
 	def mknod(self, path, mode, dev):
 		self.debug(str(['mknod', path, mode, dev]))
@@ -132,11 +136,46 @@ class GitFuse(fuse.Fuse):
 		self.git('commit -m "Changed file permissions"', realpath)
 		return ret
 
+	def unlink(self, path):
+		self.debug(str(['unlink', path]))
+		realpath = self.getpath(path)
+		ret = os.unlink(realpath)
+		self.git('rm', realpath)
+		self.git('commit -m "Deleted file"', realpath)
+		return ret
+
+	def chown(self, path, uid, gid):
+		self.debug(str(['chown', path, uid, gid]))
+		realpath = self.getpath(path)
+		return os.chown(realpath, uid, gid)
+
+#	def statfs(self):
+#		self.debug(str(['statfs']))
+#		return -errno.ENOSYS
+
+	def link(self, targetPath, linkPath):
+		self.debug(str(['link', targetPath, linkPath]))
+		return -errno.ENOSYS
+
+	def readlink(self, path):
+		self.debug(str(['readlink', path]))
+		realpath = self.getpath(path)
+		return os.readlink(realpath)
+
+	def symlink(self, targetPath, linkPath):
+		self.debug(str(['symlink', targetPath, linkPath]))
+		target = self.getpath(targetPath)
+		link = self.getpath(linkPath)
+		ret = os.symlink(target, link)
+		self.git('add', link)
+		self.git('commit -m "Created symlink"', link)
+		return ret
+
 	def getpath(self, path):
-		return self.basePath + path;
+		return self.basePath + path.lstrip('/');
 
 	def debug(self, text):
-		#return
+		return
 		f = open('/tmp/workfile', 'a+')
 		f.write(text)
 		f.write("\n")

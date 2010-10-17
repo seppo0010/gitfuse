@@ -35,7 +35,6 @@ class GitFuse(fuse.Fuse):
 		self.debug(str(['getattr', path]))
 		realpath = self.getpath(path)
 		ret = os.lstat(realpath)
-		self.debug(str(ret))
 		return ret
 
 	def mknod(self, path, mode, dev):

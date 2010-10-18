@@ -58,34 +58,33 @@ class GitFuse(fuse.Fuse):
 
 	def open(self, path, flags):
 		self.debug(str(['open', path, flags]))
-		if (path in self.openFiles and flags in self.openFiles[path]):
-			self.openFiles[path][flags]["count"] += 1
+		openmode = self.getmodeforflag(flags)
+		if (path in self.openFiles and openmode in self.openFiles[path]):
+			self.openFiles[path][openmode]["count"] += 1
 			return 0
 
-		openflag = 'a+'
-		if (flags == 0):
-			openflag = 'r+'
-		fp = open(self.getpath(path), openflag)
+		fp = open(self.getpath(path), openmode)
 		if (path not in self.openFiles):
 			self.openFiles[path] = {}
-		self.openFiles[path][flags] = {"fp":fp,"count":1}
+		self.openFiles[path][openmode] = {"fp":fp,"count":1}
 		return 0
 
 	def read(self, path, size, offset):
 		self.debug(str(['read', path, size, offset]))
-		fp = self.openFiles[path][0]["fp"]
+		fp = self.openFiles[path]['r+']["fp"]
 		fp.seek(offset, os.SEEK_SET)
 		return fp.read(size)
 
 	def release(self, path, flags):
 		self.debug(str(['release', path, flags]))
-		if (path in self.openFiles and flags in self.openFiles[path]):
-			self.openFiles[path][flags]["count"] -= 1
-			if (self.openFiles[path][flags]["count"] == 0):
-				self.openFiles[path][flags]["fp"].close()
-				if (flags == 1):
+		openmode = self.getmodeforflag(flags)
+		if (path in self.openFiles and openmode in self.openFiles[path]):
+			self.openFiles[path][openmode]["count"] -= 1
+			if (self.openFiles[path][openmode]["count"] == 0):
+				self.openFiles[path][openmode]["fp"].close()
+				if (openmode == 'a+'):
 					self.git('commit -m "Edited file"', self.getpath(path))
-				del self.openFiles[path][flags]
+				del self.openFiles[path][openmode]
 		return
 
 	def write(self, path, buf, offset):
@@ -100,8 +99,11 @@ class GitFuse(fuse.Fuse):
 
 	def truncate(self, path, size):
 		self.debug(str(['truncate', path, size]))
+		self.open(path, 1)
 		fp = self.openFiles[path][1]["fp"]
-		return fp.truncate(size)
+		ret = fp.truncate(size)
+		self.release(path, 1)
+		return ret
 
 	def utime(self, path, times):
 		self.debug(str(['utime', path, times]))
@@ -179,6 +181,12 @@ class GitFuse(fuse.Fuse):
 		self.git('add', link)
 		self.git('commit -m "Created symlink"', link)
 		return ret
+
+	def getmodeforflag(self, flag):
+		if flag & 1 > 0:
+			return 'a+'
+		else:
+			return 'r+'
 
 	def getpath(self, path):
 		return self.basePath + path.lstrip('/');

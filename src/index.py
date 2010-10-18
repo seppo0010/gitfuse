@@ -7,6 +7,7 @@ import time
 import os
 import sys
 import ConfigParser
+from multiprocessing import Process
 
 fuse.fuse_python_api = (0, 2)
 
@@ -30,6 +31,10 @@ class GitFuse(fuse.Fuse):
 			self.basePath = self.basePath.rstrip('/') + '/'
 		except ConfigParser.Error:
 			sys.exit('Unable to find repository path');
+
+		self.syncTimer = Process(None, self.gitsync)
+		self.syncTimer.start()
+
 
 	def getattr(self, path):
 		self.debug(str(['getattr', path]))
@@ -182,10 +187,17 @@ class GitFuse(fuse.Fuse):
 
 	def git(self, command, file):
 		os.chdir(self.basePath)
-		os.system('git ' + command + ' ' + file)
+		os.system('git ' + command + ' ' + file + '>/dev/null 2>/dev/null')
+
+	def gitsync(self):
+		while True:
+			time.sleep(10)
+			os.chdir(self.basePath)
+			os.system('git pull >/dev/null 2>/dev/null')
+			os.system('git push >/dev/null 2>/dev/null')
 
 if __name__ == '__main__':
 	fs = GitFuse()
 	fs.parse(errex=1)
-	fs.multithreaded = False
+	fs.multithreaded = True
 	fs.main()

@@ -4,6 +4,12 @@ On Mac OS X
 Install fink [http://www.finkproject.org/].
 Run "sudo fink install git python26 fuse-py26"
 
+On Ubuntu
+
+
 SET UP
 Copy .gitfuserc to your home
 Create a folder for your git repository (default ~/.gitfusetest, can be changed on ~/.gitfuserc) and run "git init" there.
+
+RUNNING
+Run "python2.6 <path to git-fuse>/src/index.py <mount point>"

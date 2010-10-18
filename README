@@ -5,7 +5,7 @@ Install fink [http://www.finkproject.org/].
 Run "sudo fink install git python26 fuse-py26"
 
 On Ubuntu
-
+Run "sudo apt-get install git-core python2.6-fuse"
 
 SET UP
 Copy .gitfuserc to your home

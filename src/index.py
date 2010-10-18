@@ -89,7 +89,7 @@ class GitFuse(fuse.Fuse):
 
 	def write(self, path, buf, offset):
 		self.debug(str(['write', path, buf, offset]))
-		fp = self.openFiles[path][1]["fp"]
+		fp = self.openFiles[path]['a+']["fp"]
 
 		fp.truncate(offset)
 		fp.write(str(buf))
@@ -100,7 +100,7 @@ class GitFuse(fuse.Fuse):
 	def truncate(self, path, size):
 		self.debug(str(['truncate', path, size]))
 		self.open(path, 1)
-		fp = self.openFiles[path][1]["fp"]
+		fp = self.openFiles[path]['a+']["fp"]
 		ret = fp.truncate(size)
 		self.release(path, 1)
 		return ret

@@ -191,7 +191,7 @@ class GitFuse(fuse.Fuse):
 
 	def gitsync(self):
 		while True:
-			time.sleep(10)
+			time.sleep(60)
 			os.chdir(self.basePath)
 			os.system('git pull >/dev/null 2>/dev/null')
 			os.system('git push >/dev/null 2>/dev/null')

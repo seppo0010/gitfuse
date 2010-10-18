@@ -11,6 +11,11 @@ from multiprocessing import Process
 
 fuse.fuse_python_api = (0, 2)
 
+
+
+def shellquote(s):
+	return "\"" + s.replace("\"", "\\\"") + "\""
+
 class GitFuse(fuse.Fuse):
 	basePath = ""
 	openFiles = {}
@@ -117,7 +122,7 @@ class GitFuse(fuse.Fuse):
 		ret = os.rename(src, target)
 		self.git('rm', src)
 		self.git('add', target)
-		self.git('commit -m "Renamed file" ', src + ' ' +target)
+		self.git('commit -m "Renamed file" ', [src, target])
 		return ret
 
 	def fsync(self, path, isfsyncfile):
@@ -185,9 +190,17 @@ class GitFuse(fuse.Fuse):
 		f.write("\n")
 		f.close()
 
-	def git(self, command, file):
+	def git(self, command, files):
 		os.chdir(self.basePath)
-		os.system('git ' + command + ' ' + file + '>/dev/null 2>/dev/null')
+		path = ''
+		if isinstance(files, list):
+			for f in files:
+				self.debug('f')
+				path += ' ' + shellquote(f)
+		else:
+			path = ' ' + shellquote(files)
+
+		os.system('git ' + command + path + '>/dev/null 2>/dev/null')
 
 	def gitsync(self):
 		while True:
@@ -195,6 +208,7 @@ class GitFuse(fuse.Fuse):
 			os.chdir(self.basePath)
 			os.system('git pull >/dev/null 2>/dev/null')
 			os.system('git push >/dev/null 2>/dev/null')
+
 
 if __name__ == '__main__':
 	fs = GitFuse()

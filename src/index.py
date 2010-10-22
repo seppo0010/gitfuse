@@ -21,6 +21,7 @@ def shellquote(s):
 class GitFuse(fuse.Fuse):
 	basePath = ""
 	openFiles = {}
+	remote = None
 
 	def __init__(self, *args, **kw):
 
@@ -61,9 +62,10 @@ class GitFuse(fuse.Fuse):
 		self.repo = Repo(self.basePath)
 		assert self.repo.bare == False
 
-		self.syncTimer = Process(None, self.gitsync)
-		self.syncTimer.start()
-
+		if config.has_option(mountunit, 'remote'):
+			self.remote = config.get(mountunit, 'remote')
+			self.syncTimer = Process(None, self.gitsync)
+			self.syncTimer.start()
 
 	def getattr(self, path):
 		self.debug(str(['getattr', path]))
@@ -231,12 +233,12 @@ class GitFuse(fuse.Fuse):
 
 	def gitsync(self):
 		try:
-			origin = self.repo.remotes.origin
+			remote = self.repo.remotes[self.remote]
 			while True:
 				time.sleep(60)
-				origin.fetch()
-				origin.pull()
-				origin.push()
+				remote.fetch()
+				remote.pull()
+				remote.push()
 		except AttributeError:
 			pass
 

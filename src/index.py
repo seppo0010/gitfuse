@@ -22,6 +22,7 @@ class GitFuse(fuse.Fuse):
 	basePath = ""
 	openFiles = {}
 	remote = None
+	syncFreq = 60 # in seconds
 
 	def __init__(self, *args, **kw):
 
@@ -63,6 +64,8 @@ class GitFuse(fuse.Fuse):
 		assert self.repo.bare == False
 
 		if config.has_option(mountunit, 'remote'):
+			if config.has_option(mountunit, 'remote-frequency'):
+				self.syncFreq = config.getint(mountunit, 'remote-frequency')
 			self.remote = config.get(mountunit, 'remote')
 			self.syncTimer = Process(None, self.gitsync)
 			self.syncTimer.start()
@@ -235,7 +238,7 @@ class GitFuse(fuse.Fuse):
 		try:
 			remote = self.repo.remotes[self.remote]
 			while True:
-				time.sleep(60)
+				time.sleep(self.syncFreq)
 				remote.fetch()
 				remote.pull()
 				remote.push()

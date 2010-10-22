@@ -1,2 +1,10 @@
+[default]
+repository=gitfusetest
+
 [gitfusetest]
 path=~/.gitfusetest
+remote=origin
+
+[gitfusetest2]
+path=~/.gitfusetest2
+remote=not_origin

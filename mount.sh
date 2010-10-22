@@ -1,3 +1,5 @@
-#/bin/sh
+#!/bin/bash
 ./umount.sh
-python2.6 src/index.py test/
+PARAMS=""
+if [ $# -eq 1 ]; then PARAMS="--mountunit=$1"; fi
+python2.6 src/index.py test/ $PARAMS

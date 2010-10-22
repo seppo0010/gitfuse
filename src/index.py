@@ -7,6 +7,7 @@ import time
 import os
 import sys
 import ConfigParser
+import getopt
 from git import *
 from multiprocessing import Process
 
@@ -22,7 +23,16 @@ class GitFuse(fuse.Fuse):
 	openFiles = {}
 
 	def __init__(self, *args, **kw):
-		fuse.Fuse.__init__(self, *args, **kw)
+
+		opts, args = getopt.getopt(sys.argv[2:], "v", ['mountunit='])
+		mountunit = None
+		self.verbose = False
+		for o, a in opts:
+			if o == "-v":
+				self.verbose = True
+			elif o == "--mountunit":
+				mountunit = a
+
 		home = os.getenv('HOME');
 		if home == None:
 			sys.exit('Unable to read configuration file');
@@ -31,7 +41,17 @@ class GitFuse(fuse.Fuse):
 		config.read([home + '/.gitfuserc'])
 
 		try:
-			self.basePath = config.get('gitfusetest', 'path'); #TODO: Remove hardcoded repository name
+			if mountunit == None:
+				mountunit = config.get('default', 'repository')
+		except ConfigParser.NoOptionError:
+			sys.exit('Mountunit is required. You can set it as parameter, or in ~/.gitfuserc as repository in default section.')
+
+		self.argv = sys.argv
+		sys.argv = [self.argv[0], self.argv[1]]
+		fuse.Fuse.__init__(self, *args, **kw)
+
+		try:
+			self.basePath = config.get(mountunit, 'path');
 			if self.basePath.count('~',0,1) == 1:
 				self.basePath = self.basePath.replace('~',home,1)
 			self.basePath = self.basePath.rstrip('/') + '/'

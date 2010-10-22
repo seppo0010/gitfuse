@@ -8,6 +8,7 @@ On Ubuntu
 Run "sudo apt-get install git-core python2.6-fuse"
 
 SET UP
+Run "sudo easy_install-2.6 gitpython"
 Copy .gitfuserc to your home
 Create a folder for your git repository (default ~/.gitfusetest, can be changed on ~/.gitfuserc) and run "git init" there.
 

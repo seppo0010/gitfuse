@@ -7,6 +7,7 @@ import time
 import os
 import sys
 import ConfigParser
+from git import *
 from multiprocessing import Process
 
 fuse.fuse_python_api = (0, 2)
@@ -37,6 +38,9 @@ class GitFuse(fuse.Fuse):
 		except ConfigParser.Error:
 			sys.exit('Unable to find repository path');
 
+		self.repo = Repo(self.basePath)
+		assert self.repo.bare == False
+
 		self.syncTimer = Process(None, self.gitsync)
 		self.syncTimer.start()
 
@@ -52,8 +56,9 @@ class GitFuse(fuse.Fuse):
 		realpath = self.getpath(path)
 		fp = open(realpath, 'w', mode)
 		fp.close()
-		self.git('add', realpath)
-		self.git('commit -m "Created file"', realpath)
+		index = self.repo.index
+		index.add([realpath])
+		index.commit('Created file')
 		return 0
 
 	def open(self, path, flags):
@@ -83,7 +88,8 @@ class GitFuse(fuse.Fuse):
 			if (self.openFiles[path][openmode]["count"] == 0):
 				self.openFiles[path][openmode]["fp"].close()
 				if (openmode == 'a+'):
-					self.git('commit -m "Edited file"', self.getpath(path))
+					index.add([self.getpath(path)])
+					index.commit('Edited file')
 				del self.openFiles[path][openmode]
 		return
 
@@ -122,9 +128,10 @@ class GitFuse(fuse.Fuse):
 		src = self.getpath(pathfrom)
 		target = self.getpath(pathto)
 		ret = os.rename(src, target)
-		self.git('rm', src)
-		self.git('add', target)
-		self.git('commit -m "Renamed file" ', [src, target])
+		index = self.repo.index
+		index.rm([src])
+		index.add([target])
+		index.commit('Renamed file')
 		return ret
 
 	def fsync(self, path, isfsyncfile):
@@ -144,16 +151,18 @@ class GitFuse(fuse.Fuse):
 		self.debug(str(['chmod', path, mode]))
 		realpath = self.getpath(path)
 		ret = os.chmod(realpath, mode)
-		self.git('add', realpath)
-		self.git('commit -m "Changed file permissions"', realpath)
+		index = self.repo.index
+		index.add([realpath])
+		index.commit('Changed file permissions')
 		return ret
 
 	def unlink(self, path):
 		self.debug(str(['unlink', path]))
 		realpath = self.getpath(path)
 		ret = os.unlink(realpath)
-		self.git('rm', realpath)
-		self.git('commit -m "Deleted file"', realpath)
+		index = self.repo.index
+		index.rm([realpath])
+		index.commit('Deleted file')
 		return ret
 
 	def chown(self, path, uid, gid):
@@ -179,8 +188,9 @@ class GitFuse(fuse.Fuse):
 		target = self.getpath(targetPath)
 		link = self.getpath(linkPath)
 		ret = os.symlink(target, link)
-		self.git('add', link)
-		self.git('commit -m "Created symlink"', link)
+		index = self.repo.index
+		index.add([realpath])
+		index.commit('Created symlink')
 		return ret
 
 	def getmodeforflag(self, flag):
@@ -199,24 +209,16 @@ class GitFuse(fuse.Fuse):
 		f.write("\n")
 		f.close()
 
-	def git(self, command, files):
-		os.chdir(self.basePath)
-		path = ''
-		if isinstance(files, list):
-			for f in files:
-				self.debug('f')
-				path += ' ' + shellquote(f)
-		else:
-			path = ' ' + shellquote(files)
-
-		os.system('git ' + command + path + '>/dev/null 2>/dev/null')
-
 	def gitsync(self):
-		while True:
-			time.sleep(60)
-			os.chdir(self.basePath)
-			os.system('git pull >/dev/null 2>/dev/null')
-			os.system('git push >/dev/null 2>/dev/null')
+		try:
+			origin = self.repo.remotes.origin
+			while True:
+				time.sleep(60)
+				origin.fetch()
+				origin.pull()
+				origin.push()
+		except AttributeError:
+			pass
 
 
 if __name__ == '__main__':

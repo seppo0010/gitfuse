@@ -137,7 +137,8 @@ class GitFuse(fuse.Fuse):
 		for e in '.', '..':
 			yield fuse.Direntry(e);
 		for e in os.listdir(self.basePath + path):
-			yield fuse.Direntry(e);
+			if (path != '/' or e != '.git'):
+				yield fuse.Direntry(e);
 
 	def chmod(self, path, mode):
 		self.debug(str(['chmod', path, mode]))

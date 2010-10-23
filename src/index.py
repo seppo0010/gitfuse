@@ -244,8 +244,10 @@ class GitFuse(fuse.Fuse):
 				fetch = remote.fetch()
 				if self.remoteNotification != None:
 					for info in fetch:
-						diffIndex = self.repo.head.commit.diff(info.ref)
-						notification_str = '';
+						if self.repo.head.commit == info.commit:
+							continue
+						diffIndex = self.repo.head.commit.diff(info.commit)
+						notification_str = 'Changes by ' + str(info.commit.committer) + "\n"
 						for diff_added in diffIndex.iter_change_type('A'):
 							notification_str += 'Added ' + str(diff_added.b_blob.path) + "\n"
 						for diff_added in diffIndex.iter_change_type('D'):
@@ -256,8 +258,7 @@ class GitFuse(fuse.Fuse):
 							#print 'Renamed ' + str(diff_added.b_blob.path)
 						for diff_added in diffIndex.iter_change_type('M'):
 							notification_str += 'Modified ' + str(diff_added.a_blob.path) + "\n"
-						if len(notification_str) > 0:
-							os.system(self.remoteNotification.format(shellquote(notification_str)))
+						os.system(self.remoteNotification.format(shellquote(notification_str)))
 				remote.pull()
 				remote.push()
 		except AttributeError:

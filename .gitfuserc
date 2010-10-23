@@ -4,8 +4,11 @@ repository=gitfusetest
 [gitfusetest]
 path=~/.gitfusetest
 remote=origin
-remote-frequency=5
-remote-notification=growlnotify -s <<<{0}
+remote-frequency=60
+remote-notification=growlnotify <<<{0}
 
 [gitfusetest2]
 path=~/.gitfusetest2
+
+[unittest]
+path=~/.gitfuseunittest

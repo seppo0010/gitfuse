@@ -23,9 +23,9 @@ class GitFuse(fuse.Fuse):
 	openFiles = {}
 	remote = None
 	syncFreq = 60 # in seconds
+	remoteNotification = None
 
 	def __init__(self, *args, **kw):
-
 		opts, args = getopt.getopt(sys.argv[2:], "v", ['mountunit='])
 		mountunit = None
 		self.verbose = False
@@ -66,6 +66,8 @@ class GitFuse(fuse.Fuse):
 		if config.has_option(mountunit, 'remote'):
 			if config.has_option(mountunit, 'remote-frequency'):
 				self.syncFreq = config.getint(mountunit, 'remote-frequency')
+			if config.has_option(mountunit, 'remote-notification'):
+				self.remoteNotification = config.get(mountunit, 'remote-notification')
 			self.remote = config.get(mountunit, 'remote')
 			self.syncTimer = Process(None, self.gitsync)
 			self.syncTimer.start()
@@ -239,7 +241,23 @@ class GitFuse(fuse.Fuse):
 			remote = self.repo.remotes[self.remote]
 			while True:
 				time.sleep(self.syncFreq)
-				remote.fetch()
+				fetch = remote.fetch()
+				if self.remoteNotification != None:
+					for info in fetch:
+						diffIndex = self.repo.head.commit.diff(info.ref)
+						notification_str = '';
+						for diff_added in diffIndex.iter_change_type('A'):
+							notification_str += 'Added ' + str(diff_added.b_blob.path) + "\n"
+						for diff_added in diffIndex.iter_change_type('D'):
+							notification_str += 'Deleted ' + str(diff_added.a_blob.path) + "\n"
+						for diff_added in diffIndex.iter_change_type('R'):
+							pass
+							#print 'Renamed ' + str(diff_added.a_blob.path)
+							#print 'Renamed ' + str(diff_added.b_blob.path)
+						for diff_added in diffIndex.iter_change_type('M'):
+							notification_str += 'Modified ' + str(diff_added.a_blob.path) + "\n"
+						if len(notification_str) > 0:
+							os.system(self.remoteNotification.format(shellquote(notification_str)))
 				remote.pull()
 				remote.push()
 		except AttributeError:

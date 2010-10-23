@@ -24,6 +24,7 @@ class GitFuse(fuse.Fuse):
 	remote = None
 	syncFreq = 60 # in seconds
 	remoteNotification = None
+	verbose = False
 
 	def __init__(self, *args, **kw):
 		opts, args = getopt.getopt(sys.argv[2:], "v", ['mountunit='])
@@ -246,7 +247,7 @@ class GitFuse(fuse.Fuse):
 					for info in fetch:
 						if self.repo.head.commit == info.commit:
 							continue
-						diffIndex = self.repo.head.commit.diff(info.commit)
+						diffIndex = info.commit.diff(self.repo.head.commit)
 						notification_str = 'Changes by ' + str(info.commit.committer) + "\n"
 						for diff_added in diffIndex.iter_change_type('A'):
 							notification_str += 'Added ' + str(diff_added.b_blob.path) + "\n"

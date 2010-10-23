@@ -13,27 +13,27 @@ class TestGitFuse(unittest.TestCase):
 		self.repo = Repo(self.repoPath)
 
 	def test_create_empty_file(self):
-		fp = open(self.path + 'asd', 'w', 0755)
+		fp = open(self.path + 'data', 'w', 0755)
 		fp.close()
 		repo = Repo(self.repoPath)
 		stats = repo.head.commit.parents[0].stats # HEAD is the file edit - parent is the first commit creating the file
 		self.assertEqual(stats.total['files'], 1)
 
 	def test_edit_file(self):
-		fp = open(self.path + 'asd', 'w', 0755)
+		fp = open(self.path + 'data', 'w', 0755)
 		fp.write('hello\nworld')
 		fp.close()
 		stats = self.repo.head.commit.stats
-		self.assertEqual(stats.files['asd']['insertions'], 2)
+		self.assertEqual(stats.files['data']['insertions'], 2)
 
 
 	def test_delete_file(self):
-		os.unlink(self.path + 'asd')
+		os.unlink(self.path + 'data')
 		diffIndex = self.repo.head.commit.parents[0].diff(self.repo.head.commit)
 		runDeleted = False
 		for diff in diffIndex.iter_change_type('D'):
 			runDeleted = True
-			self.assertEqual(diff.a_blob.path, 'asd')
+			self.assertEqual(diff.a_blob.path, 'data')
 			self.assertEqual(diff.deleted_file, True)
 		self.assertEqual(runDeleted, True)
 

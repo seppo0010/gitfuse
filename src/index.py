@@ -158,8 +158,8 @@ class GitFuse(fuse.Fuse):
 		target = self.getpath(pathto)
 		ret = os.rename(src, target)
 		index = self.repo.index
-		index.rm([src])
 		index.add([target])
+		index.remove([src])
 		index.commit('Renamed file')
 		return ret
 
@@ -190,7 +190,7 @@ class GitFuse(fuse.Fuse):
 		realpath = self.getpath(path)
 		ret = os.unlink(realpath)
 		index = self.repo.index
-		index.rm([realpath])
+		index.remove([realpath])
 		index.commit('Deleted file')
 		return ret
 

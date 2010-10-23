@@ -1,5 +1,5 @@
 #!/bin/bash
 ./umount.sh
-PARAMS=""
-if [ $# -eq 1 ]; then PARAMS="--mountunit=$1"; fi
-python2.6 src/index.py dir/ $PARAMS
+PARAMS=$*
+if [ $# -eq 0 ]; then PARAMS="dir/ --mountunit=gitfusetest"; fi
+python2.6 src/index.py $PARAMS

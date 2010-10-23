@@ -116,6 +116,7 @@ class GitFuse(fuse.Fuse):
 			if (self.openFiles[path][openmode]["count"] == 0):
 				self.openFiles[path][openmode]["fp"].close()
 				if (openmode == 'a+'):
+					index = self.repo.index
 					index.add([self.getpath(path)])
 					index.commit('Edited file')
 				del self.openFiles[path][openmode]

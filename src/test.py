@@ -30,6 +30,9 @@ class TestGitFuse(unittest.TestCase):
 		self.assertTrue(time.time() - statinfo.st_mtime < 2)
 		self.assertTrue(time.time() - statinfo.st_ctime < 2)
 
+		#NOTE: we are checking local permissions, not git permissions.
+		#This is related to git design limitations and cross platform support.
+
 	def test_create_empty_file(self):
 		fp = open(self.path + 'data', 'w')
 		fp.close()

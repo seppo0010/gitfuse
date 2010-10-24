@@ -82,7 +82,7 @@ class GitFuse(fuse.Fuse):
 	def mknod(self, path, mode, dev):
 		self.debug(str(['mknod', path, mode, dev]))
 		realpath = self.getpath(path)
-		fp = open(realpath, 'w', mode)
+		fp = open(realpath, 'w')
 		fp.close()
 		index = self.repo.index
 		index.add([realpath])

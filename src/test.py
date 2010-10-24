@@ -34,18 +34,27 @@ class TestGitFuse(unittest.TestCase):
 		#This is related to git design limitations and cross platform support.
 
 	def test_create_empty_file(self):
+		self.assertFalse(os.path.exists(self.repoPath + 'data'))
 		fp = open(self.path + 'data', 'w')
 		fp.close()
+		self.assertTrue(os.path.exists(self.repoPath + 'data'))
 		repo = Repo(self.repoPath)
 		stats = repo.head.commit.parents[0].stats # HEAD is the file edit - parent is the first commit creating the file
 		self.assertEqual(stats.total['files'], 1)
 
+		statinfo = os.stat(self.repoPath + 'data')
+		self.assertEqual(statinfo.st_mode & stat.S_IFREG, stat.S_IFREG) # checking if real file was created
+
 	def test_edit_file(self):
+		text ='hello\nworld'
 		fp = open(self.path + 'data', 'w')
-		fp.write('hello\nworld')
+		fp.write(text)
 		fp.close()
 		stats = self.repo.head.commit.stats
 		self.assertEqual(stats.files['data']['insertions'], 2)
+
+		statinfo = os.stat(self.repoPath + 'data')
+		self.assertEqual(statinfo.st_size, len(text)) # checking if real file was created
 
 
 	def test_delete_file(self):
@@ -57,6 +66,8 @@ class TestGitFuse(unittest.TestCase):
 			self.assertEqual(diff.a_blob.path, 'data')
 			self.assertEqual(diff.deleted_file, True)
 		self.assertEqual(runDeleted, True)
+
+		self.assertFalse(os.path.exists(self.repoPath + 'data'))
 
 
 if __name__ == '__main__':

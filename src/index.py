@@ -252,14 +252,14 @@ class GitFuse(fuse.Fuse):
 						notification_str = 'Changes by ' + str(info.commit.committer) + "\n"
 						for diff_added in diffIndex.iter_change_type('A'):
 							notification_str += 'Added ' + str(diff_added.b_blob.path) + "\n"
-						for diff_added in diffIndex.iter_change_type('D'):
-							notification_str += 'Deleted ' + str(diff_added.a_blob.path) + "\n"
-						for diff_added in diffIndex.iter_change_type('R'):
+						for diff_deleted in diffIndex.iter_change_type('D'):
+							notification_str += 'Deleted ' + str(diff_deleted.a_blob.path) + "\n"
+						for diff_renamed in diffIndex.iter_change_type('R'):
 							pass
-							#print 'Renamed ' + str(diff_added.a_blob.path)
-							#print 'Renamed ' + str(diff_added.b_blob.path)
-						for diff_added in diffIndex.iter_change_type('M'):
-							notification_str += 'Modified ' + str(diff_added.a_blob.path) + "\n"
+							#print 'Renamed ' + str(diff_renamed.a_blob.path)
+							#print 'Renamed ' + str(diff_renamed.b_blob.path)
+						for diff_modified in diffIndex.iter_change_type('M'):
+							notification_str += 'Modified ' + str(diff_modified.a_blob.path) + "\n"
 						os.system(self.remoteNotification.format(shellquote(notification_str)))
 				remote.pull()
 				remote.push()

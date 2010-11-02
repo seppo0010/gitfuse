@@ -151,10 +151,11 @@ class GitFuse(fuse.Fuse):
 		src = self.getpath(pathfrom)
 		target = self.getpath(pathto)
 		ret = os.rename(src, target)
-		index = self.repo.index
-		index.add([target])
-		index.remove([src])
-		index.commit('Renamed file')
+		if os.path.isdir(target) == False or os.listdir(target) != []:
+			index = self.repo.index
+			index.add([target])
+			index.remove([src], r="")
+			index.commit('Renamed folder/file')
 		return ret
 
 	def fsync(self, path, isfsyncfile):

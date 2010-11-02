@@ -80,10 +80,7 @@ class TestGitFuse(unittest.TestCase):
 		os.mkdir(self.path + 'dir');
 		fp = open(self.path + 'dir/data', 'w')
 		fp.close()
-		try:
-			os.rename(self.path + 'dir', self.path + 'dir2');
-		except OSError:
-			pass
+		os.rename(self.path + 'dir', self.path + 'dir2');
 		self.assertTrue(os.path.exists(self.path + 'dir2'))
 		self.assertTrue(os.path.exists(self.repoPath + 'dir2'))
 		self.assertTrue(os.path.exists(self.path + 'dir2/data'))
@@ -95,10 +92,7 @@ class TestGitFuse(unittest.TestCase):
 
 	def test_rename_empty_folder(self):
 		os.mkdir(self.path + 'dir');
-		try:
-			os.rename(self.path + 'dir', self.path + 'dir2');
-		except OSError: #TODO: For some reason, my OS is throwing the exception but working...
-			pass
+		os.rename(self.path + 'dir', self.path + 'dir2');
 		self.assertTrue(os.path.exists(self.path + 'dir2'))
 		self.assertTrue(os.path.exists(self.repoPath + 'dir2'))
 		self.assertFalse(os.path.exists(self.path + 'dir'))

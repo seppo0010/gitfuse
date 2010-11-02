@@ -124,6 +124,7 @@ class GitFuse(fuse.Fuse):
 
 	def write(self, path, buf, offset):
 		self.debug(str(['write', path, buf, offset]))
+		self.open(path, 1)
 		fp = self.openFiles[path]['a+']["fp"]
 
 		fp.truncate(offset)
@@ -131,6 +132,7 @@ class GitFuse(fuse.Fuse):
 		fp.flush()
 		os.fsync(fp.fileno())
 		ret = len(buf)
+		self.release(path, 1)
 		self.debug(str(['return', 'write', path, buf, offset, ret]))
 		return ret
 

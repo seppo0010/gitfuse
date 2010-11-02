@@ -36,12 +36,8 @@ class GitFuse(fuse.Fuse):
 			elif o == "--mountunit":
 				mountunit = a
 
-		home = os.getenv('HOME');
-		if home == None:
-			sys.exit('Unable to read configuration file');
-
 		config = ConfigParser.ConfigParser()
-		config.read([home + '/.gitfuserc'])
+		config.read([os.path.expanduser('~/.gitfuserc')])
 
 		try:
 			if mountunit == None:
@@ -55,9 +51,7 @@ class GitFuse(fuse.Fuse):
 
 		try:
 			self.basePath = config.get(mountunit, 'path');
-			if self.basePath.count('~',0,1) == 1:
-				self.basePath = self.basePath.replace('~',home,1)
-			self.basePath = self.basePath.rstrip('/') + '/'
+			self.basePath = os.path.expanduser(self.basePath.rstrip('/')) + '/'
 		except ConfigParser.Error:
 			sys.exit('Unable to find repository path');
 

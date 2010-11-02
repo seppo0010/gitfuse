@@ -56,7 +56,6 @@ class TestGitFuse(unittest.TestCase):
 		statinfo = os.stat(self.repoPath + 'data')
 		self.assertEqual(statinfo.st_size, len(text)) # checking if real file was created
 
-
 	def test_delete_file(self):
 		os.unlink(self.path + 'data')
 		diffIndex = self.repo.head.commit.parents[0].diff(self.repo.head.commit)
@@ -68,6 +67,43 @@ class TestGitFuse(unittest.TestCase):
 		self.assertEqual(runDeleted, True)
 
 		self.assertFalse(os.path.exists(self.repoPath + 'data'))
+
+	def test_create_folder(self):
+		os.mkdir(self.path + 'dir');
+		self.assertTrue(os.path.exists(self.path + 'dir'))
+		self.assertTrue(os.path.exists(self.repoPath + 'dir'))
+		os.rmdir(self.path + 'dir');
+		self.assertFalse(os.path.exists(self.path + 'dir'))
+		self.assertFalse(os.path.exists(self.repoPath + 'dir'))
+
+	def test_rename_non_empty_folder(self):
+		os.mkdir(self.path + 'dir');
+		fp = open(self.path + 'dir/data', 'w')
+		fp.close()
+		try:
+			os.rename(self.path + 'dir', self.path + 'dir2');
+		except OSError:
+			pass
+		self.assertTrue(os.path.exists(self.path + 'dir2'))
+		self.assertTrue(os.path.exists(self.repoPath + 'dir2'))
+		self.assertTrue(os.path.exists(self.path + 'dir2/data'))
+		self.assertTrue(os.path.exists(self.repoPath + 'dir2/data'))
+		self.assertFalse(os.path.exists(self.path + 'dir'))
+		self.assertFalse(os.path.exists(self.repoPath + 'dir'))
+		os.unlink(self.path + 'dir2/data')
+		os.rmdir(self.path + 'dir2');
+
+	def test_rename_empty_folder(self):
+		os.mkdir(self.path + 'dir');
+		try:
+			os.rename(self.path + 'dir', self.path + 'dir2');
+		except OSError: #TODO: For some reason, my OS is throwing the exception but working...
+			pass
+		self.assertTrue(os.path.exists(self.path + 'dir2'))
+		self.assertTrue(os.path.exists(self.repoPath + 'dir2'))
+		self.assertFalse(os.path.exists(self.path + 'dir'))
+		self.assertFalse(os.path.exists(self.repoPath + 'dir'))
+		os.rmdir(self.path + 'dir2');
 
 
 if __name__ == '__main__':

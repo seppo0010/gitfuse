@@ -71,6 +71,7 @@ class GitFuse(fuse.Fuse):
 		self.debug(str(['getattr', path]))
 		realpath = self.getpath(path)
 		ret = os.lstat(realpath)
+		self.debug(str(['return', 'getattr', path, str(ret)]))
 		return ret
 
 	def mknod(self, path, mode, dev):
@@ -81,6 +82,7 @@ class GitFuse(fuse.Fuse):
 		index = self.repo.index
 		index.add([realpath])
 		index.commit('Created file')
+		self.debug(str(['return', 'mknod', path, mode, dev]))
 		return 0
 
 	def open(self, path, flags):
@@ -94,13 +96,16 @@ class GitFuse(fuse.Fuse):
 		if (path not in self.openFiles):
 			self.openFiles[path] = {}
 		self.openFiles[path][openmode] = {"fp":fp,"count":1}
+		self.debug(str(['return', 'open', path, flags]))
 		return 0
 
 	def read(self, path, size, offset):
 		self.debug(str(['read', path, size, offset]))
 		fp = self.openFiles[path]['r+']["fp"]
 		fp.seek(offset, os.SEEK_SET)
-		return fp.read(size)
+		ret = fp.read(size)
+		self.debug(str(['return', 'read', path, size, offset, str(ret)]))
+		return ret
 
 	def release(self, path, flags):
 		self.debug(str(['release', path, flags]))
@@ -114,6 +119,7 @@ class GitFuse(fuse.Fuse):
 					index.add([self.getpath(path)])
 					index.commit('Edited file')
 				del self.openFiles[path][openmode]
+		self.debug(str(['return', 'release', path, flags]))
 		return
 
 	def write(self, path, buf, offset):
@@ -124,7 +130,9 @@ class GitFuse(fuse.Fuse):
 		fp.write(str(buf))
 		fp.flush()
 		os.fsync(fp.fileno())
-		return len(buf)
+		ret = len(buf)
+		self.debug(str(['return', 'write', path, buf, offset, ret]))
+		return ret
 
 	def truncate(self, path, size):
 		self.debug(str(['truncate', path, size]))
@@ -132,19 +140,26 @@ class GitFuse(fuse.Fuse):
 		fp = self.openFiles[path]['a+']["fp"]
 		ret = fp.truncate(size)
 		self.release(path, 1)
+		self.debug(str(['return', 'truncate', path, size, ret]))
 		return ret
 
 	def utime(self, path, times):
 		self.debug(str(['utime', path, times]))
-		return os.utime(self.getpath(path), times)
+		ret = os.utime(self.getpath(path), times)
+		self.debug(str(['return', 'utime', path, times, ret]))
+		return ret
 
 	def mkdir(self, path, mode):
 		self.debug(str(['mkdir', path, mode]))
-		return os.mkdir(self.getpath(path), mode)
+		ret = os.mkdir(self.getpath(path), mode)
+		self.debug(str(['return', 'mkdir', path, mode, ret]))
+		return ret
 
 	def rmdir(self, path):
 		self.debug(str(['rmdir', path]))
-		return os.rmdir(self.getpath(path))
+		ret = os.rmdir(self.getpath(path))
+		self.debug(str(['return', 'rmdir', path, ret]))
+		return ret
 
 	def rename(self, pathfrom, pathto):
 		self.debug(str(['rename', pathfrom, pathto]))
@@ -156,12 +171,15 @@ class GitFuse(fuse.Fuse):
 			index.add([target])
 			index.remove([src], r="")
 			index.commit('Renamed folder/file')
+		self.debug(str(['return', 'rename', pathfrom, pathto, ret]))
 		return ret
 
 	def fsync(self, path, isfsyncfile):
 		self.debug(str(['fsync', path, isfsyncfile]))
 		fp = self.openFiles[path][1]["fp"]
-		return os.fsync(fp)
+		ret = os.fsync(fp)
+		self.debug(str(['return', 'fsync', path, isfsyncfile, ret]))
+		return ret
 
 	def readdir(self, path, offset):
 		self.debug(str(['readdir', path, offset]))
@@ -170,6 +188,7 @@ class GitFuse(fuse.Fuse):
 		for e in os.listdir(self.basePath + path):
 			if (path != '/' or e != '.git'):
 				yield fuse.Direntry(e);
+		self.debug(str(['return', 'readdir', path, offset]))
 
 	def chmod(self, path, mode):
 		self.debug(str(['chmod', path, mode]))
@@ -178,6 +197,7 @@ class GitFuse(fuse.Fuse):
 		index = self.repo.index
 		index.add([realpath])
 		index.commit('Changed file permissions')
+		self.debug(str(['return', 'chmod', path, mode, ret]))
 		return ret
 
 	def unlink(self, path):
@@ -187,12 +207,15 @@ class GitFuse(fuse.Fuse):
 		index = self.repo.index
 		index.remove([realpath])
 		index.commit('Deleted file')
+		self.debug(str(['return', 'unlink', path, ret]))
 		return ret
 
 	def chown(self, path, uid, gid):
 		self.debug(str(['chown', path, uid, gid]))
 		realpath = self.getpath(path)
-		return os.chown(realpath, uid, gid)
+		ret = os.chown(realpath, uid, gid)
+		self.debug(str(['return', 'chown', path, uid, gid, ret]))
+		return ret
 
 #	def statfs(self):
 #		self.debug(str(['statfs']))
@@ -205,7 +228,9 @@ class GitFuse(fuse.Fuse):
 	def readlink(self, path):
 		self.debug(str(['readlink', path]))
 		realpath = self.getpath(path)
-		return os.readlink(realpath)
+		ret = os.readlink(realpath)
+		self.debug(str(['return', 'readlink', path, ret]))
+		return ret
 
 	def symlink(self, targetPath, linkPath):
 		self.debug(str(['symlink', targetPath, linkPath]))
@@ -215,6 +240,7 @@ class GitFuse(fuse.Fuse):
 		index = self.repo.index
 		index.add([realpath])
 		index.commit('Created symlink')
+		self.debug(str(['return', 'symlink', targetPath, linkPath, ret]))
 		return ret
 
 	def getmodeforflag(self, flag):

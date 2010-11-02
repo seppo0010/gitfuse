@@ -101,10 +101,12 @@ class GitFuse(fuse.Fuse):
 
 	def read(self, path, size, offset):
 		self.debug(str(['read', path, size, offset]))
+		self.open(path, 0)
 		fp = self.openFiles[path]['r+']["fp"]
 		fp.seek(offset, os.SEEK_SET)
 		ret = fp.read(size)
 		self.debug(str(['return', 'read', path, size, offset, str(ret)]))
+		self.release(path, 0)
 		return ret
 
 	def release(self, path, flags):
@@ -178,9 +180,11 @@ class GitFuse(fuse.Fuse):
 
 	def fsync(self, path, isfsyncfile):
 		self.debug(str(['fsync', path, isfsyncfile]))
-		fp = self.openFiles[path][1]["fp"]
+		self.open(path, 1)
+		fp = self.openFiles[path]['a+']["fp"]
 		ret = os.fsync(fp)
 		self.debug(str(['return', 'fsync', path, isfsyncfile, ret]))
+		self.release(path, 1)
 		return ret
 
 	def readdir(self, path, offset):

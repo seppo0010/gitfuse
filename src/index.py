@@ -223,9 +223,11 @@ class GitFuse(fuse.Fuse):
 		self.debug(str(['return', 'chown', path, uid, gid, ret]))
 		return ret
 
-#	def statfs(self):
-#		self.debug(str(['statfs']))
-#		return -errno.ENOSYS
+	def statfs(self):
+		self.debug(str(['statfs']))
+		ret = os.statvfs(self.basePath);
+		self.debug(str(['return', 'statfs', ret]))
+		return ret
 
 	def link(self, targetPath, linkPath):
 		self.debug(str(['link', targetPath, linkPath]))

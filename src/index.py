@@ -69,8 +69,16 @@ class GitFuse(fuse.Fuse):
 
 	def getattr(self, path):
 		self.debug(str(['getattr', path]))
-		realpath = self.getpath(path)
-		ret = os.lstat(realpath)
+		if path == '/.gitfuserepo':
+			ret = fuse.Stat()
+			ret.st_mode = stat.S_IFLNK | 0755
+			ret.st_nlink = 2
+			ret.st_atime = int(time.time())
+			ret.st_mtime = ret.st_atime
+			ret.st_ctime = ret.st_atime
+		else:
+			realpath = self.getpath(path)
+			ret = os.lstat(realpath)
 		self.debug(str(['return', 'getattr', path, str(ret)]))
 		return ret
 
@@ -191,6 +199,10 @@ class GitFuse(fuse.Fuse):
 		self.debug(str(['readdir', path, offset]))
 		for e in '.', '..':
 			yield fuse.Direntry(e);
+
+		if path == '/':
+			yield fuse.Direntry('.gitfuserepo');
+
 		for e in os.listdir(self.basePath + path):
 			if (path != '/' or e != '.git'):
 				yield fuse.Direntry(e);
@@ -235,8 +247,11 @@ class GitFuse(fuse.Fuse):
 
 	def readlink(self, path):
 		self.debug(str(['readlink', path]))
-		realpath = self.getpath(path)
-		ret = os.readlink(realpath)
+		if path == '/.gitfuserepo':
+			ret = self.basePath
+		else:
+			realpath = self.getpath(path)
+			ret = os.readlink(realpath)
 		self.debug(str(['return', 'readlink', path, ret]))
 		return ret
 

@@ -10,6 +10,7 @@ import ConfigParser
 import getopt
 from git import *
 from multiprocessing import Process
+import hooks
 
 fuse.fuse_python_api = (0, 2)
 
@@ -25,6 +26,7 @@ class GitFuse(fuse.Fuse):
 	syncFreq = 60 # in seconds
 	remoteNotification = None
 	verbose = False
+	hooks = []
 
 	def __init__(self, *args, **kw):
 		opts, args = getopt.getopt(sys.argv[2:], "v", ['mountunit='])
@@ -58,6 +60,10 @@ class GitFuse(fuse.Fuse):
 		self.repo = Repo(self.basePath)
 		assert self.repo.bare == False
 
+		for attr in hooks.__all__:
+			fnc = hooks.__getattribute__(attr)
+			self.hooks.append(fnc(self))
+
 		if config.has_option(mountunit, 'remote'):
 			if config.has_option(mountunit, 'remote-frequency'):
 				self.syncFreq = config.getint(mountunit, 'remote-frequency')
@@ -69,16 +75,11 @@ class GitFuse(fuse.Fuse):
 
 	def getattr(self, path):
 		self.debug(str(['getattr', path]))
-		if path == '/.gitfuserepo':
-			ret = fuse.Stat()
-			ret.st_mode = stat.S_IFLNK | 0755
-			ret.st_nlink = 2
-			ret.st_atime = int(time.time())
-			ret.st_mtime = ret.st_atime
-			ret.st_ctime = ret.st_atime
-		else:
-			realpath = self.getpath(path)
-			ret = os.lstat(realpath)
+		for hook in self.hooks:
+			if hasattr(hook, "respond_getattr") and callable(getattr(hook, "respond_getattr")) and hook.respond_getattr(path):
+				return hook.getattr(path)
+		realpath = self.getpath(path)
+		ret = os.lstat(realpath)
 		self.debug(str(['return', 'getattr', path, str(ret)]))
 		return ret
 
@@ -247,11 +248,12 @@ class GitFuse(fuse.Fuse):
 
 	def readlink(self, path):
 		self.debug(str(['readlink', path]))
-		if path == '/.gitfuserepo':
-			ret = self.basePath
-		else:
-			realpath = self.getpath(path)
-			ret = os.readlink(realpath)
+		for hook in self.hooks:
+			if hasattr(hook, "respond_readlink") and callable(getattr(hook, "respond_readlink")) and hook.respond_readlink(path):
+				return hook.readlink(path)
+
+		realpath = self.getpath(path)
+		ret = os.readlink(realpath)
 		self.debug(str(['return', 'readlink', path, ret]))
 		return ret
 

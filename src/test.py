@@ -99,6 +99,9 @@ class TestGitFuse(unittest.TestCase):
 		self.assertFalse(os.path.exists(self.repoPath + 'dir'))
 		os.rmdir(self.path + 'dir2');
 
+	def test_hook_repo_symlink(self):
+		self.assertEqual(os.readlink(self.path + '.gitfuserepo'), self.repoPath)
+
 
 if __name__ == '__main__':
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestGitFuse)

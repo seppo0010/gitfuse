@@ -32,11 +32,6 @@ class Reposymlink(object):
 		path = params[0]
 		return self.fs.basePath
 
-	def respond_readdir(self, params):
-		path = params[0]
-		return path == '/'
-
-
 	def readdir(self, params):
 		path = params[0]
 		if path == '/':

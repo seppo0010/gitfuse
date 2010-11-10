@@ -73,11 +73,22 @@ class GitFuse(fuse.Fuse):
 			self.syncTimer = Process(None, self.gitsync)
 			self.syncTimer.start()
 
+	def hashookformethod(self, method, params):
+		for hook in self.hooks:
+			if hasattr(hook, "respond_" + method) and callable(getattr(hook, "respond_" + method)) and getattr(hook, "respond_" + method)(params):
+				return True
+		return False
+
+	def hookmethod(self, method, params):
+		for hook in self.hooks:
+			if hasattr(hook, "respond_" + method) and callable(getattr(hook, "respond_" + method)) and getattr(hook,"respond_" + method)(params):
+				return getattr(hook, method)(params)
+
+
 	def getattr(self, path):
 		self.debug(str(['getattr', path]))
-		for hook in self.hooks:
-			if hasattr(hook, "respond_getattr") and callable(getattr(hook, "respond_getattr")) and hook.respond_getattr(path):
-				return hook.getattr(path)
+		if self.hashookformethod("getattr", [path]):
+			return self.hookmethod("getattr", [path])
 		realpath = self.getpath(path)
 		ret = os.lstat(realpath)
 		self.debug(str(['return', 'getattr', path, str(ret)]))
@@ -85,6 +96,8 @@ class GitFuse(fuse.Fuse):
 
 	def mknod(self, path, mode, dev):
 		self.debug(str(['mknod', path, mode, dev]))
+		if self.hashookformethod("mknod", [path, mode, dev]):
+			return self.hookmethod("mknod", [path, mode, dev])
 		realpath = self.getpath(path)
 		fp = open(realpath, 'w')
 		fp.close()
@@ -96,6 +109,8 @@ class GitFuse(fuse.Fuse):
 
 	def open(self, path, flags):
 		self.debug(str(['open', path, flags]))
+		if self.hashookformethod("open", [path, flags]):
+			return self.hookmethod("getattr", [path, flags])
 		openmode = self.getmodeforflag(flags)
 		if (path in self.openFiles and openmode in self.openFiles[path]):
 			self.openFiles[path][openmode]["count"] += 1
@@ -110,6 +125,8 @@ class GitFuse(fuse.Fuse):
 
 	def read(self, path, size, offset):
 		self.debug(str(['read', path, size, offset]))
+		if self.hashookformethod("read", [path, size, offset]):
+			return self.hookmethod("read", [path, size, offset])
 		self.open(path, 0)
 		fp = self.openFiles[path]['r+']["fp"]
 		fp.seek(offset, os.SEEK_SET)
@@ -120,6 +137,8 @@ class GitFuse(fuse.Fuse):
 
 	def release(self, path, flags):
 		self.debug(str(['release', path, flags]))
+		if self.hashookformethod("release", [path, flags]):
+			return self.hookmethod("release", [path, flags])
 		openmode = self.getmodeforflag(flags)
 		if (path in self.openFiles and openmode in self.openFiles[path]):
 			self.openFiles[path][openmode]["count"] -= 1
@@ -135,6 +154,8 @@ class GitFuse(fuse.Fuse):
 
 	def write(self, path, buf, offset):
 		self.debug(str(['write', path, buf, offset]))
+		if self.hashookformethod("write", [path, buf, offset]):
+			return self.hookmethod("write", [path, buf, offset])
 		self.open(path, 1)
 		fp = self.openFiles[path]['a+']["fp"]
 
@@ -149,6 +170,8 @@ class GitFuse(fuse.Fuse):
 
 	def truncate(self, path, size):
 		self.debug(str(['truncate', path, size]))
+		if self.hashookformethod("truncate", [path, size]):
+			return self.hookmethod("truncate", [path, size])
 		self.open(path, 1)
 		fp = self.openFiles[path]['a+']["fp"]
 		ret = fp.truncate(size)
@@ -158,24 +181,32 @@ class GitFuse(fuse.Fuse):
 
 	def utime(self, path, times):
 		self.debug(str(['utime', path, times]))
+		if self.hashookformethod("utime", [path, times]):
+			return self.hookmethod("utime", [path, times])
 		ret = os.utime(self.getpath(path), times)
 		self.debug(str(['return', 'utime', path, times, ret]))
 		return ret
 
 	def mkdir(self, path, mode):
 		self.debug(str(['mkdir', path, mode]))
+		if self.hashookformethod("mkdir", [path, mode]):
+			return self.hookmethod("mkdir", [path, mode])
 		ret = os.mkdir(self.getpath(path), mode)
 		self.debug(str(['return', 'mkdir', path, mode, ret]))
 		return ret
 
 	def rmdir(self, path):
 		self.debug(str(['rmdir', path]))
+		if self.hashookformethod("rmdir", [path]):
+			return self.hookmethod("rmdir", [path])
 		ret = os.rmdir(self.getpath(path))
 		self.debug(str(['return', 'rmdir', path, ret]))
 		return ret
 
 	def rename(self, pathfrom, pathto):
 		self.debug(str(['rename', pathfrom, pathto]))
+		if self.hashookformethod("rename", [pathfrom, pathto]):
+			return self.hookmethod("rename", [pathfrom, pathto])
 		src = self.getpath(pathfrom)
 		target = self.getpath(pathto)
 		ret = os.rename(src, target)
@@ -189,6 +220,8 @@ class GitFuse(fuse.Fuse):
 
 	def fsync(self, path, isfsyncfile):
 		self.debug(str(['fsync', path, isfsyncfile]))
+		if self.hashookformethod("fsync", [path, isfsyncfile]):
+			return self.hookmethod("fsync", [path, isfsyncfile])
 		self.open(path, 1)
 		fp = self.openFiles[path]['a+']["fp"]
 		ret = os.fsync(fp)
@@ -201,8 +234,9 @@ class GitFuse(fuse.Fuse):
 		for e in '.', '..':
 			yield fuse.Direntry(e);
 
-		if path == '/':
-			yield fuse.Direntry('.gitfuserepo');
+		for hook in self.hooks:
+			for file in hook.readdir([path, offset]):
+				yield fuse.Direntry(file)
 
 		for e in os.listdir(self.basePath + path):
 			if (path != '/' or e != '.git'):
@@ -211,6 +245,8 @@ class GitFuse(fuse.Fuse):
 
 	def chmod(self, path, mode):
 		self.debug(str(['chmod', path, mode]))
+		if self.hashookformethod("chmod", [path, mode]):
+			return self.hookmethod("chmod", [path, mode])
 		realpath = self.getpath(path)
 		ret = os.chmod(realpath, mode)
 		index = self.repo.index
@@ -221,6 +257,8 @@ class GitFuse(fuse.Fuse):
 
 	def unlink(self, path):
 		self.debug(str(['unlink', path]))
+		if self.hashookformethod("unlink", [path]):
+			return self.hookmethod("unlink", [path])
 		realpath = self.getpath(path)
 		ret = os.unlink(realpath)
 		index = self.repo.index
@@ -231,6 +269,8 @@ class GitFuse(fuse.Fuse):
 
 	def chown(self, path, uid, gid):
 		self.debug(str(['chown', path, uid, gid]))
+		if self.hashookformethod("chown", [path, uid, gid]):
+			return self.hookmethod("chown", [path, uid, gid])
 		realpath = self.getpath(path)
 		ret = os.chown(realpath, uid, gid)
 		self.debug(str(['return', 'chown', path, uid, gid, ret]))
@@ -238,19 +278,22 @@ class GitFuse(fuse.Fuse):
 
 	def statfs(self):
 		self.debug(str(['statfs']))
+		if self.hashookformethod("statfs", []):
+			return self.hookmethod("statfs", [])
 		ret = os.statvfs(self.basePath);
 		self.debug(str(['return', 'statfs', ret]))
 		return ret
 
 	def link(self, targetPath, linkPath):
 		self.debug(str(['link', targetPath, linkPath]))
+		if self.hashookformethod("link", [targetPath, linkPath]):
+			return self.hookmethod("link", [targetPath, linkPath])
 		return -errno.ENOSYS
 
 	def readlink(self, path):
 		self.debug(str(['readlink', path]))
-		for hook in self.hooks:
-			if hasattr(hook, "respond_readlink") and callable(getattr(hook, "respond_readlink")) and hook.respond_readlink(path):
-				return hook.readlink(path)
+		if self.hashookformethod("readlink", [path]):
+			return self.hookmethod("readlink", [path])
 
 		realpath = self.getpath(path)
 		ret = os.readlink(realpath)
@@ -259,6 +302,8 @@ class GitFuse(fuse.Fuse):
 
 	def symlink(self, targetPath, linkPath):
 		self.debug(str(['symlink', targetPath, linkPath]))
+		if self.hashookformethod("symlink", [targetPath, linkPath]):
+			return self.hookmethod("symlink", [targetPath, linkPath])
 		target = self.getpath(targetPath)
 		link = self.getpath(linkPath)
 		ret = os.symlink(target, link)

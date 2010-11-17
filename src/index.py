@@ -324,7 +324,7 @@ class GitFuse(fuse.Fuse):
 		return self.basePath + path.lstrip('/');
 
 	def debug(self, text):
-		#return
+		return
 		f = open('/tmp/workfile', 'a+')
 		f.write(text)
 		f.write("\n")

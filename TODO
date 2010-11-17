@@ -1,3 +1,4 @@
 - Resolve conflicts
 - Browse old versions
 - Idea: Handle file permissions (replicate the file structure with the permissions? using sqlite with path->permissions?)
+- Idea: Rollback a file to an old commit writting the revision number in some file?

@@ -238,9 +238,10 @@ class GitFuse(fuse.Fuse):
 			for file in hook.readdir([path, offset]):
 				yield fuse.Direntry(file)
 
-		for e in os.listdir(self.basePath + path):
-			if (path != '/' or e != '.git'):
-				yield fuse.Direntry(e);
+		if os.path.isdir(self.basePath + path):
+			for e in os.listdir(self.basePath + path):
+				if (path != '/' or e != '.git'):
+					yield fuse.Direntry(e);
 		self.debug(str(['return', 'readdir', path, offset]))
 
 	def chmod(self, path, mode):
@@ -323,7 +324,7 @@ class GitFuse(fuse.Fuse):
 		return self.basePath + path.lstrip('/');
 
 	def debug(self, text):
-		return
+		#return
 		f = open('/tmp/workfile', 'a+')
 		f.write(text)
 		f.write("\n")

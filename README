@@ -5,7 +5,7 @@ Install fink [http://www.finkproject.org/].
 Run "sudo fink install git python26 fuse-py26"
 
 On Ubuntu
-Run "sudo apt-get install git-core python2.6-fuse"
+Run "sudo apt-get install git-core python2.6-fuse python-setuptools"
 
 SET UP
 Run "sudo easy_install-2.6 gitpython"

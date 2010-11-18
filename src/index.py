@@ -49,6 +49,8 @@ class GitFuse(fuse.Fuse):
 
 		self.argv = sys.argv
 		sys.argv = [self.argv[0], self.argv[1]]
+		if self.verbose:
+			sys.argv.append('-d')
 		fuse.Fuse.__init__(self, *args, **kw)
 
 		try:
@@ -235,8 +237,10 @@ class GitFuse(fuse.Fuse):
 			yield fuse.Direntry(e);
 
 		for hook in self.hooks:
-			for file in hook.readdir([path, offset]):
-				yield fuse.Direntry(file)
+			data = hook.readdir([path, offset])
+			if data != None:
+				for f in data:
+					yield fuse.Direntry(f)
 
 		if os.path.isdir(self.basePath + path):
 			for e in os.listdir(self.basePath + path):

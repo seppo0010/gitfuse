@@ -36,3 +36,4 @@ class Reposymlink(object):
 		path = params[0]
 		if path == '/':
 			return ['.gitfuserepo'];
+		return []

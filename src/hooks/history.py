@@ -13,9 +13,12 @@ class History(object):
 	def __init__(self, fs):
 		self.fs = fs
 
-	def respond_getattr(self, params):
+	def contains_path(self, params):
 		path = params[0]
 		return path.startswith('/.githistory')
+
+	def respond_getattr(self, params):
+		return self.contains_path(params)
 		
 	def getattr(self, params):
 		path = params[0]
@@ -48,8 +51,36 @@ class History(object):
 			ret.st_atime = int(time.time())
 			ret.st_mtime = commit.committed_date
 			ret.st_ctime = commit.committed_date
+			ret.st_size = len(self.fs.repo.git.show(revision + ':' + file))
 			return ret
 		return -errno.ENOENT
+
+	def respond_open(self, params):
+		return self.contains_path(params)
+
+	def open(self, params):
+		return 0
+
+	def respond_read(self, params):
+		return self.contains_path(params)
+
+	def read(self, params):
+		path = params[0]
+		size = params[1]
+		offset = params[2]
+		subpath = path[13:]
+		m = re.match(r'(.+)\/([0-9a-fA-F]{40})',subpath)
+		if m:
+			file = m.group(1)
+			revision = m.group(2)
+			return str(self.fs.repo.git.show(revision + ':' + file))[offset:size-offset]
+		return ''
+
+	def respond_release(self, params):
+		return self.contains_path(params)
+
+	def release(self, params):
+		pass
 
 	def readdir(self, args):
 		path = args[0]

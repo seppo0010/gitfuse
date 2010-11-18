@@ -112,7 +112,7 @@ class GitFuse(fuse.Fuse):
 	def open(self, path, flags):
 		self.debug(str(['open', path, flags]))
 		if self.hashookformethod("open", [path, flags]):
-			return self.hookmethod("getattr", [path, flags])
+			return self.hookmethod("open", [path, flags])
 		openmode = self.getmodeforflag(flags)
 		if (path in self.openFiles and openmode in self.openFiles[path]):
 			self.openFiles[path][openmode]["count"] += 1

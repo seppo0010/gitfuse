@@ -102,6 +102,20 @@ class TestGitFuse(unittest.TestCase):
 	def test_hook_repo_symlink(self):
 		self.assertEqual(os.readlink(self.path + '.gitfuserepo'), self.repoPath)
 
+	def test_hook_history_exists(self):
+		self.assertTrue(os.path.exists(self.path + '.githistory'))
+
+	def test_hook_history_create_commits(self):
+		pass
+
+	def test_hook_history_create_commits_on_subfolders(self):
+		pass
+
+	def test_hook_history_read_commits(self):
+		pass
+
+	def test_hook_history_read_commits_more_than_65536(self):
+		pass
 
 if __name__ == '__main__':
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestGitFuse)

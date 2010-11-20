@@ -2,6 +2,7 @@ import unittest
 import os
 import stat
 import time
+import random
 from git import *
 
 class TestGitFuse(unittest.TestCase):
@@ -122,7 +123,6 @@ class TestGitFuse(unittest.TestCase):
 		for commit in os.listdir(self.path + '.githistory/' + filename):
 			number_of_commits+=1
 		self.assertEqual(number_of_commits, 2)
-		
 
 	def test_hook_history_create_commits_on_subfolders(self):
 		foldername = 'testdir'
@@ -145,10 +145,67 @@ class TestGitFuse(unittest.TestCase):
 		self.assertEqual(number_of_commits, 2)
 
 	def test_hook_history_read_commits(self):
-		pass
+		filename = 'history2'
+		self.assertFalse(os.path.exists(self.repoPath + filename))
+		fp = open(self.path + filename, 'w')
+		fp.close()
+		self.assertTrue(os.path.exists(self.repoPath + filename))
+		commits = []
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			commits.append(commit)
+
+		content = 'asd'
+		fp = open(self.path + filename, 'w')
+		fp.write(content)
+		fp.close()
+
+		new_commit = None
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			if commits.count(commit) == 0:
+				new_commit = commit
+				break
+
+		self.assertNotEqual(new_commit, None)
+
+		with open(self.path + '.githistory/' + filename + '/' + new_commit, 'r') as f:
+			read_data = f.read()
+		self.assertEqual(read_data, content)
 
 	def test_hook_history_read_commits_more_than_65536(self):
-		pass
+		filename = 'history3'
+		self.assertFalse(os.path.exists(self.repoPath + filename))
+		fp = open(self.path + filename, 'w')
+		fp.close()
+		self.assertTrue(os.path.exists(self.repoPath + filename))
+		commits = []
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			commits.append(commit)
+
+		content = ''
+		while len(content) < 65536:
+			content += get_random_word(random.randint(5, 15)) + ' '
+
+		fp = open(self.path + filename, 'w')
+		fp.write(content)
+		fp.close()
+
+		new_commit = None
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			if commits.count(commit) == 0:
+				new_commit = commit
+				break
+
+		self.assertNotEqual(new_commit, None)
+
+		with open(self.path + '.githistory/' + filename + '/' + new_commit, 'r') as f:
+			read_data = f.read()
+		self.assertEqual(read_data, content)
+
+def get_random_word(wordLen):
+    word = ''
+    for i in range(wordLen):
+        word += random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')
+    return word
 
 if __name__ == '__main__':
 	suite = unittest.TestLoader().loadTestsFromTestCase(TestGitFuse)

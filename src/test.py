@@ -106,10 +106,43 @@ class TestGitFuse(unittest.TestCase):
 		self.assertTrue(os.path.exists(self.path + '.githistory'))
 
 	def test_hook_history_create_commits(self):
-		pass
+		filename = 'history'
+		self.assertFalse(os.path.exists(self.repoPath + filename))
+		fp = open(self.path + filename, 'w')
+		fp.close()
+		self.assertTrue(os.path.exists(self.repoPath + filename))
+		number_of_commits = 0
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			number_of_commits+=1
+		self.assertEqual(number_of_commits, 1)
+		fp = open(self.path + filename, 'w')
+		fp.write('asd')
+		fp.close()
+		number_of_commits = 0
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			number_of_commits+=1
+		self.assertEqual(number_of_commits, 2)
+		
 
 	def test_hook_history_create_commits_on_subfolders(self):
-		pass
+		foldername = 'testdir'
+		os.mkdir(self.path + foldername)
+		filename = foldername + '/history'
+		self.assertFalse(os.path.exists(self.repoPath + filename))
+		fp = open(self.path + filename, 'w')
+		fp.close()
+		self.assertTrue(os.path.exists(self.repoPath + filename))
+		number_of_commits = 0
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			number_of_commits+=1
+		self.assertEqual(number_of_commits, 1)
+		fp = open(self.path + filename, 'w')
+		fp.write('asd')
+		fp.close()
+		number_of_commits = 0
+		for commit in os.listdir(self.path + '.githistory/' + filename):
+			number_of_commits+=1
+		self.assertEqual(number_of_commits, 2)
 
 	def test_hook_history_read_commits(self):
 		pass

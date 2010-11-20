@@ -73,7 +73,8 @@ class History(object):
 		if m:
 			file = m.group(1)
 			revision = m.group(2)
-			return str(self.fs.repo.git.show(revision + ':' + file))[offset:size-offset]
+			data = self.fs.repo.git.show(revision + ':' + file)
+			return str(data)[offset:size+offset]
 		return ''
 
 	def respond_release(self, params):

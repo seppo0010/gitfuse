@@ -1,3 +1,2 @@
 - Resolve conflicts
-- Browse old versions - Binary safe ?
 - Idea: Handle file permissions (replicate the file structure with the permissions? using sqlite with path->permissions?)

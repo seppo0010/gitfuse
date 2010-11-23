@@ -2,3 +2,4 @@
 - Idea: Handle file permissions (replicate the file structure with the permissions? using sqlite with path->permissions?)
 - open/release of history improved (leeping in memory for all reads)
 - permissions on history files (permission of the current file; writing fails)
+- confirm usage of .gitignore to omit files

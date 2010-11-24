@@ -23,9 +23,12 @@ class History(object):
 	def getattr(self, params):
 		path = params[0]
 		if path == '/.githistory':
+			fstat = os.lstat(self.fs.basePath)
 			ret = fuse.Stat()
 			ret.st_mode = stat.S_IFDIR | 0755
 			ret.st_nlink = 2
+			ret.st_uid = fstat.st_uid
+			ret.st_gid = fstat.st_gid
 			ret.st_atime = int(time.time())
 			ret.st_mtime = ret.st_atime
 			ret.st_ctime = ret.st_atime
@@ -33,9 +36,12 @@ class History(object):
 
 		subpath = path[13:]
 		if os.path.isdir(self.fs.basePath + subpath) or os.path.isfile(self.fs.basePath + subpath):
+			fstat = os.lstat(self.fs.basePath + subpath)
 			ret = fuse.Stat()
 			ret.st_mode = stat.S_IFDIR | 0755
 			ret.st_nlink = 2
+			ret.st_uid = fstat.st_uid
+			ret.st_gid = fstat.st_gid
 			ret.st_atime = int(time.time())
 			ret.st_mtime = ret.st_atime
 			ret.st_ctime = ret.st_atime
@@ -44,9 +50,12 @@ class History(object):
 		if m:
 			file = m.group(1)
 			revision = m.group(2)
+			fstat = os.lstat(self.fs.basePath + file)
 			commit = self.fs.repo.commit(revision)
 			ret = fuse.Stat()
-			ret.st_mode = stat.S_IFREG | 0755
+			ret.st_mode = stat.S_IFREG | (fstat.st_mode & 0777)
+			ret.st_uid = fstat.st_uid
+			ret.st_gid = fstat.st_gid
 			ret.st_nlink = 2
 			ret.st_atime = int(time.time())
 			ret.st_mtime = commit.committed_date

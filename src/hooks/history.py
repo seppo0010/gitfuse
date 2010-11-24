@@ -59,6 +59,8 @@ class History(object):
 		return self.contains_path(params)
 
 	def open(self, params):
+		if self.fs.getmodeforflag(params[1]) == 'a+':
+			return -errno.ENOENT
 		return 0
 
 	def respond_read(self, params):

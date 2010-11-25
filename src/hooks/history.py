@@ -6,9 +6,11 @@ import time
 import os
 import re
 import errno
+import git
 
 class History(object):
 	fs = None
+	openFiles = {}
 
 	def __init__(self, fs):
 		self.fs = fs
@@ -60,7 +62,10 @@ class History(object):
 			ret.st_atime = int(time.time())
 			ret.st_mtime = commit.committed_date
 			ret.st_ctime = commit.committed_date
-			ret.st_size = len(self.fs.repo.git.show(revision + ':' + file))
+			self.open([path, 0])
+			if path in self.openFiles:
+				ret.st_size = len(self.openFiles[path]['data'])
+			self.release([path, 0])
 			return ret
 		return -errno.ENOENT
 
@@ -70,6 +75,22 @@ class History(object):
 	def open(self, params):
 		if self.fs.getmodeforflag(params[1]) == 'a+':
 			return -errno.ENOENT
+
+		path = params[0]
+		if path not in self.openFiles:
+			subpath = path[13:]
+			m = re.match(r'(.+)\/([0-9a-fA-F]{40})',subpath)
+			if m:
+				file = m.group(1)
+				revision = m.group(2)
+				data = ''
+				try:
+					data = self.fs.repo.git.show(revision + ':' + file)
+				except git.exc.GitCommandError:
+					pass
+				self.openFiles[path] = {"data":data, "count":1}
+		else:
+			self.openFiles[path]["count"] += 1
 		return 0
 
 	def respond_read(self, params):
@@ -79,20 +100,26 @@ class History(object):
 		path = params[0]
 		size = params[1]
 		offset = params[2]
-		subpath = path[13:]
-		m = re.match(r'(.+)\/([0-9a-fA-F]{40})',subpath)
-		if m:
-			file = m.group(1)
-			revision = m.group(2)
-			data = self.fs.repo.git.show(revision + ':' + file)
-			return str(data)[offset:size+offset]
-		return ''
+		ret = ''
+		self.open([path, 0])
+		if path in self.openFiles:
+			ret = self.openFiles[path]['data'][offset:size+offset]
+		self.release([path, 0])
+		return ret
 
 	def respond_release(self, params):
 		return self.contains_path(params)
 
 	def release(self, params):
-		pass
+		path = params[0]
+		if self.fs.getmodeforflag(params[1]) == 'a+':
+			return -errno.ENOENT
+
+		if path in self.openFiles:
+			self.openFiles[path]["count"] -= 1
+			if self.openFiles[path]["count"] == 0:
+				del self.openFiles[path]
+		return 0
 
 	def readdir(self, args):
 		path = args[0]

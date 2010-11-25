@@ -104,7 +104,7 @@ class GitFuse(fuse.Fuse):
 		fp = open(realpath, 'w')
 		fp.close()
 		index = self.repo.index
-		index.add([realpath])
+		index.add([realpath], force=False)
 		index.commit('Created file')
 		self.debug(str(['return', 'mknod', path, mode, dev]))
 		return 0
@@ -148,7 +148,7 @@ class GitFuse(fuse.Fuse):
 				self.openFiles[path][openmode]["fp"].close()
 				if (openmode == 'a+'):
 					index = self.repo.index
-					index.add([self.getpath(path)])
+					index.add([self.getpath(path)], force=False)
 					index.commit('Edited file')
 				del self.openFiles[path][openmode]
 		self.debug(str(['return', 'release', path, flags]))
@@ -214,7 +214,7 @@ class GitFuse(fuse.Fuse):
 		ret = os.rename(src, target)
 		if os.path.isdir(target) == False or os.listdir(target) != []:
 			index = self.repo.index
-			index.add([target])
+			index.add([target], force=False)
 			index.remove([src], r="")
 			index.commit('Renamed folder/file')
 		self.debug(str(['return', 'rename', pathfrom, pathto, ret]))
@@ -255,7 +255,7 @@ class GitFuse(fuse.Fuse):
 		realpath = self.getpath(path)
 		ret = os.chmod(realpath, mode)
 		index = self.repo.index
-		index.add([realpath])
+		index.add([realpath], force=False)
 		index.commit('Changed file permissions')
 		self.debug(str(['return', 'chmod', path, mode, ret]))
 		return ret
@@ -313,7 +313,7 @@ class GitFuse(fuse.Fuse):
 		link = self.getpath(linkPath)
 		ret = os.symlink(target, link)
 		index = self.repo.index
-		index.add([realpath])
+		index.add([realpath], force=False)
 		index.commit('Created symlink')
 		self.debug(str(['return', 'symlink', targetPath, linkPath, ret]))
 		return ret
